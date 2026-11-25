@@ -3,10 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Norglyph</title>
+<title>Norglyph · Design and communication studio</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="description" content="Norglyph is a design and communication studio working across borders, shaping publications, visual identities, and stories.">
 <link rel="stylesheet" href="https://use.typekit.net/cum7lbw.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#EDE5D0">
+<link rel="canonical" href="https://norglyph.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Norglyph">
+<meta property="og:title" content="Norglyph · Design and communication studio">
+<meta property="og:description" content="Norglyph is a design and communication studio working across borders, shaping publications, visual identities, and stories.">
+<meta property="og:url" content="https://norglyph.com/">
+<meta property="og:image" content="https://norglyph.com/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Norglyph Publishing Systems: a printed globe with the countries of our work marked in red">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -90,7 +105,7 @@ body:not(.compact) #intro .lead { position: fixed; left: max(var(--m), env(safe-
 #intro .lead { font-family: var(--font-text); font-size: 16px; line-height: 1.45; text-wrap: pretty; }
 #intro .note { font-size: 11px; line-height: 1.55; letter-spacing: 0.02em; color: var(--ink-soft); }
 #intro .soon { font-size: 11px; line-height: 1.55; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); }
-#cap { position: fixed; z-index: 5; left: var(--cap-l, 16px); width: var(--cap-w, calc(100% - 32px)); top: var(--cap-t, auto); transition: opacity .4s; }
+#cap { position: fixed; z-index: 5; left: max(var(--cap-l, 16px), env(safe-area-inset-left, 0px)); width: var(--cap-w, calc(100% - 32px)); top: var(--cap-t, auto); transition: opacity .4s; }
 body:not(.mode-atlas) #cap { opacity: 0; pointer-events: none; }
 #cap .label { position: static; transform: none !important; }
 body.compact #intro { position: static; width: auto; max-width: 52ch; }
@@ -186,7 +201,7 @@ form.enq h3, .details h3 { margin: 0; font-size: 11px; font-weight: 400; letter-
 #nogl { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* ---------- phone */
-@media (max-width: 759px) {
+@media (max-width: 759px) and (orientation: portrait), (max-width: 759px) and (min-height: 560px) {
   .only-narrow { display: flex; }
   nav.main { gap: 18px; }
   header.bar { grid-template-columns: 1fr auto; height: auto; padding-block: 14px; row-gap: 10px; }
@@ -205,8 +220,13 @@ form.enq h3, .details h3 { margin: 0; font-size: 11px; font-weight: 400; letter-
   .grid2, .contact-grid { grid-template-columns: minmax(0, 1fr); }
   .body { font-size: 17px; }
 }
+@media (max-width: 899px) {
+  .mark .desc { display: none; }
+  nav.main { gap: 22px; }
+}
 @media (orientation: landscape) and (max-height: 520px) {
   body.side #intro { gap: 8px; }
+  footer .legend { display: none; }
   body.side #intro .lead { font-size: 14px; line-height: 1.4; }
   body.side #intro .note, body.side #intro .soon { font-size: 10px; line-height: 1.5; }
 }
@@ -586,7 +606,9 @@ function measureIntro(w){
 function resize(){
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
-  narrow = W < 760; compact = W < 1100;
+  // a phone on its side is wide but very short: treat it as a landscape layout, not a portrait phone
+  const shortLand = W > H && H < 560;
+  narrow = W < 760 && !shortLand; compact = W < 1100;
   side = compact && !narrow && W > H * 1.25 && H < 700;
   document.body.classList.toggle('compact', compact);
   document.body.classList.toggle('side', side);
