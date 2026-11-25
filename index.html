@@ -70,7 +70,7 @@ body:not(.mode-atlas) footer.bar > * { pointer-events: none; }
 .mark { display: flex; align-items: center; gap: 14px; color: var(--ink); }
 .mark:hover { color: var(--ink); }
 .mark .logo { height: 20px; width: auto; display: block; }
-.mark .desc { font-size: 10px; letter-spacing: 0.16em; }
+.mark .desc { font-size: 10px; letter-spacing: 0.16em; white-space: nowrap; }
 nav.main { display: flex; gap: 32px; }
 nav.main a[aria-current] { text-decoration: underline; text-underline-offset: 4px; }
 .right { justify-self: end; display: flex; gap: 20px; align-items: center; }
@@ -170,7 +170,7 @@ form.enq h3, .details h3 { margin: 0; font-size: 11px; font-weight: 400; letter-
 #dnav {
   position: fixed; z-index: 7; right: max(var(--m), env(safe-area-inset-right, 0px));
   top: var(--dnav-top); bottom: 28px; width: var(--dnav-w);
-  display: flex; flex-direction: column; gap: 22px;
+  display: flex; flex-direction: column; gap: 22px; overflow-y: auto;
   opacity: 0; transform: translateY(12px); transition: opacity .35s linear, transform .6s var(--ease);
 }
 #dnav.on { opacity: 1; transform: none; transition-delay: .55s, .55s; }
@@ -204,6 +204,11 @@ form.enq h3, .details h3 { margin: 0; font-size: 11px; font-weight: 400; letter-
   table.idx td.pl, table.idx td.wk { grid-column: 2; padding-top: 4px; }
   .grid2, .contact-grid { grid-template-columns: minmax(0, 1fr); }
   .body { font-size: 17px; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  body.side #intro { gap: 8px; }
+  body.side #intro .lead { font-size: 14px; line-height: 1.4; }
+  body.side #intro .note, body.side #intro .soon { font-size: 10px; line-height: 1.5; }
 }
 @media (prefers-reduced-motion: reduce) {
   .layer, #dock, #dnav, footer.bar, #intro { transition-duration: 0s !important; transition-delay: 0s !important; }
@@ -359,7 +364,7 @@ let rot = [-15, -12, 0];
 const layers = document.createElement('canvas');
 const lctx = layers.getContext('2d');
 const lpath = d3.geoPath(proj, lctx);
-let W = 0, H = 0, dpr = 1, R = 100, cx = 0, cy = 0, narrow = false, compact = false;
+let W = 0, H = 0, dpr = 1, R = 100, cx = 0, cy = 0, narrow = false, compact = false, side = false;
 
 // ---------- WebGL
 const gl = sheet.getContext('webgl', { antialias: false, preserveDrawingBuffer: false });
@@ -508,6 +513,13 @@ function layoutFor(m){
     const colW = Math.max(2 * r, 210);
     return { cx: W - 24 - colW / 2, cy: top + 12 + r, R: r, gcol: 24 + colW + 40, navTop: top + 12 + 2 * r + 30, navW: colW };
   }
+  if (side) {
+    // phones on their side: text in a column on the left, globe in the space to its right
+    const introW = sideW();
+    const left = 24 + introW + 24;
+    const r = Math.max(70, Math.min((W - left - 24) / 2, availH / 2 - 8));
+    return { cx: left + (W - left - 24) / 2, cy: top + availH / 2, R: r };
+  }
   if (compact) {
     // narrower screens: the globe sits high and the landing text gets its own space below it.
     // The globe shrinks if needed so the whole text always fits above the footer.
@@ -539,6 +551,12 @@ function setTarget(m, instant){
   } else if (!compact) {
     root.setProperty('--intro-w', Math.max(200, Math.min(300, to.cx - to.R - 72)) + 'px');
     root.setProperty('--gcy', Math.round(to.cy) + 'px');
+  } else if (side) {
+    const w = sideW(), top = headerH(), availH = H - top - 60;
+    const textH = measureIntro(w);
+    root.setProperty('--cap-w', w + 'px');
+    root.setProperty('--cap-l', '24px');
+    root.setProperty('--cap-t', Math.round(top + Math.max(4, (availH - textH) / 2)) + 'px');
   } else {
     // the text sits just under the globe, as wide as the globe (never narrower than the phone allows)
     const w = narrow ? W - 48 : Math.min(W - 48, Math.max(2 * to.R, 320));
@@ -556,6 +574,7 @@ function turnTo(lon, lat){
   rotT0 = performance.now(); rotDur = reduceMotion ? 1 : 850 + Math.min(500, Math.abs(d) * 2.5);
   vel = [0, 0];
 }
+function sideW(){ return Math.round(Math.max(220, Math.min(320, W * 0.36))); }
 function measureIntro(w){
   // the text is already in the caption area on these screens: measure it there at the trial width
   const prev = capEl.style.width, hidden = introEl.style.display;
@@ -568,7 +587,9 @@ function resize(){
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   W = window.innerWidth; H = window.innerHeight;
   narrow = W < 760; compact = W < 1100;
+  side = compact && !narrow && W > H * 1.25 && H < 700;
   document.body.classList.toggle('compact', compact);
+  document.body.classList.toggle('side', side);
   (compact ? capEl : document.body).appendChild(introEl);
   for (const c of [sheet, layers]) { c.width = Math.round(W*dpr); c.height = Math.round(H*dpr); }
   leaders.setAttribute('viewBox', `0 0 ${W} ${H}`);
@@ -675,7 +696,7 @@ function route(){
 function enter(m, anchor){
   const prev = mode;
   mode = m; hovered = null;
-  document.body.className = 'mode-' + m + (compact ? ' compact' : '');
+  document.body.className = 'mode-' + m + (compact ? ' compact' : '') + (side ? ' side' : '');
   setTarget(m);
   if (m === 'index') { renderIndex(false); reveal(indexEl, true); if (prev !== 'index') indexEl.scrollTop = 0; } else reveal(indexEl, false);
   if (m === 'about') {
@@ -905,7 +926,24 @@ function render(){
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
-window.addEventListener('resize', () => { resize(); document.body.className = 'mode-' + mode + (compact ? ' compact' : ''); });
+let lastSize = '', sizeQueued = false;
+function relayout(force){
+  if (sizeQueued) return; sizeQueued = true;
+  requestAnimationFrame(() => {
+    sizeQueued = false;
+    const key = window.innerWidth + 'x' + window.innerHeight + ':' + headerH();
+    if (!force && key === lastSize) return;
+    lastSize = key;
+    resize(); document.body.className = 'mode-' + mode + (compact ? ' compact' : '') + (side ? ' side' : '');
+  });
+}
+window.addEventListener('resize', () => relayout());
+window.addEventListener('orientationchange', () => { relayout(); setTimeout(() => relayout(true), 400); });
+window.addEventListener('pageshow', () => relayout(true));
+if (window.visualViewport) visualViewport.addEventListener('resize', () => relayout());
+new ResizeObserver(() => relayout()).observe(document.documentElement);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => relayout(true));
+[250, 800, 2000].forEach(t => setTimeout(() => relayout(), t));
 resize();
 route();
 requestAnimationFrame(frame);
