@@ -296,27 +296,6 @@ form.enq h3, .details h3 { margin: 0; font-size: 11px; font-weight: 400; letter-
       <p class="body">Tell us what you’re working on, who it’s for, and where you need help. You can share an early idea or an existing brief.</p>
       <div class="email-row"><a class="email" href="mailto:hello@norglyph.com">hello@norglyph.com</a><button class="copy" type="button" id="copyBtn">Copy address</button></div>
       <p class="based">Based in Stockholm, working internationally.</p>
-      <div class="contact-grid">
-        <div id="formWrap">
-          <form class="enq" id="enq" name="enquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
-            <h3>Project enquiry form</h3>
-            <input type="hidden" name="form-name" value="enquiry">
-            <p class="hp"><label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
-            <div class="field"><label for="f-name">Name*</label><input id="f-name" name="name" type="text" autocomplete="name" required><span class="err" id="e-name"></span></div>
-            <div class="field"><label for="f-email">Email*</label><input id="f-email" name="email" type="email" autocomplete="email" required><span class="err" id="e-email"></span></div>
-            <div class="field"><label for="f-org">Organisation — optional</label><input id="f-org" name="organisation" type="text" autocomplete="organization"></div>
-            <div class="field"><label for="f-msg">Tell us about your project*</label><textarea id="f-msg" name="message" required></textarea><span class="err" id="e-msg"></span></div>
-            <div><button class="btn" type="submit" id="sendBtn">Send enquiry</button></div>
-            <p class="form-msg" id="formMsg" role="alert"></p>
-          </form>
-          <p class="thanks" id="thanks" hidden tabindex="-1">Thank you for getting in touch. Your enquiry has been received.</p>
-        </div>
-        <div class="details">
-          <h3>Practical details</h3>
-          <span class="todo">[Phone / WhatsApp — optional]</span>
-          <span class="todo">[Relevant social or professional links]</span>
-        </div>
-      </div>
     </div>
 
   </div>
@@ -827,30 +806,6 @@ document.getElementById('copyBtn').addEventListener('click', async e => {
   catch (err) { const r = document.createRange(); r.selectNodeContents(document.querySelector('.email')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected, press Cmd+C'; }
   setTimeout(() => { b.textContent = 'Copy address'; }, 2200);
 });
-const form = document.getElementById('enq');
-const LIVE = /(^|\.)norglyph\.com$|\.netlify\.app$/.test(location.hostname);
-form.addEventListener('submit', async e => {
-  e.preventDefault();
-  const v = id => document.getElementById(id).value.trim();
-  const errs = { 'e-name': v('f-name') ? '' : 'Please add your name.',
-    'e-email': /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('f-email')) ? '' : 'Please add an email address we can reply to.',
-    'e-msg': v('f-msg') ? '' : 'Please tell us a little about the project.' };
-  let first = null;
-  for (const [id, msg] of Object.entries(errs)) { document.getElementById(id).textContent = msg; if (msg && !first) first = id.replace('e-', 'f-'); }
-  if (first) { document.getElementById(first).focus(); return; }
-  const btn = document.getElementById('sendBtn'), msgEl = document.getElementById('formMsg');
-  btn.disabled = true; btn.textContent = 'Sending…'; msgEl.textContent = '';
-  const done = () => { const wrap = document.getElementById('formWrap'); wrap.style.minHeight = wrap.offsetHeight + 'px'; form.hidden = true; const t = document.getElementById('thanks'); t.hidden = false; t.focus(); };
-  if (!LIVE) { setTimeout(() => { done(); document.getElementById('thanks').textContent += ' (Preview: nothing was sent.)'; }, 400); return; }
-  try {
-    const res = await fetch('/', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(new FormData(form)).toString() });
-    if (!res.ok) throw new Error(res.status);
-    done();
-  } catch (err) {
-    btn.disabled = false; btn.textContent = 'Send enquiry';
-    msgEl.textContent = 'The enquiry could not be sent. Please try again, or write to hello@norglyph.com.';
-  }
-});
 
 // ---------- pointer: drag to turn; hover (or tap) a pin to see the place
 let dragging = false, last = null, vel = [0, 0], idleUntil = 0, downAt = null, moved = 0;
@@ -950,14 +905,6 @@ function render(){
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
-// practical details sit beside the "Tell us about your project" box on wide screens
-function alignDetails(){
-  const d = document.querySelector('.details'), f = document.getElementById('f-msg').closest('.field');
-  d.style.marginTop = '0px';
-  if (narrow || form.hidden) return;
-  d.style.marginTop = Math.max(0, f.getBoundingClientRect().top - d.getBoundingClientRect().top) + 'px';
-}
-new ResizeObserver(alignDetails).observe(document.getElementById('formWrap'));
 window.addEventListener('resize', () => { resize(); document.body.className = 'mode-' + mode + (compact ? ' compact' : ''); });
 resize();
 route();
